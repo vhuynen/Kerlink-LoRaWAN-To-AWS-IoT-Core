@@ -23,6 +23,15 @@ The second part of this guide explains how to attach your LoRaWAN device to AWS 
     - [Install certificates](#install-certificates)
     - [Enable the credentials by SSH](#enable-the-credentials-by-ssh)
   - [Adding Device to AWS IoT Core](#adding-device-to-aws-iot-core)
+    - [Profiles](#profiles)
+      - [Device Profile](#device-profile)
+      - [Service Profile](#service-profile)
+    - [Destination](#destination)
+      - [IAM Role](#iam-role)
+    - [Device Settings](#device-settings)
+  - [Home Assistant](#home-assistant)
+    - [Node-RED Flow](#node-red-flow)
+    - [MQTT Sensor Integration](#mqtt-sensor-integration)
   - [References](#references)
 
 ## How to Convert an HNT Kerlink Gateway into a Simple LoRaWAN Gateway
@@ -87,6 +96,7 @@ In the next section :
 > ℹ️ The Basic Station is a modern protocol designed for LoRaWAN gateways to ensure secure and reliable communication with network servers. It uses WebSockets for communication, which provides enhanced security and stability. The protocol supports features like remote configuration, firmware updates, and secure authentication, making it easier to manage and maintain gateways. By using Basic Station, gateways can efficiently handle data transmission and ensure that they are always up-to-date with the latest configurations and security measures.
 >
 > *System overview of LoRa Basic Station* :
+> 
 ![Basic Station Architecture](https://doc.sm.tc/station/_images/station-overview.svg)
 
 ## Kerlink gateway settings
@@ -127,7 +137,29 @@ Now, if you return to the AWS IoT Core Management Console, you can verify that y
 
 ## Adding Device to AWS IoT Core
 
+The aim of this project is to progressively migrate all my LoRaWAN devices integrated from Helium to my own private LoRaWAN network. I intend to delegate the management of the LNS to AWS while forwarding messages to my on-premise Home Assistant. Therefore, before moving forward, I recommend reading this [post](https://github.com/vhuynen/Helium-Network-AWS-IoT-Core-Home-Assistant) to understand how to connect AWS IoT Core to Home Assistant over MQTT.
+
 Section in Progess...
+
+### Profiles
+
+#### Device Profile
+
+#### Service Profile
+
+### Destination
+
+#### IAM Role
+
+https://docs.aws.amazon.com/iot-wireless/latest/developerguide/lorawan-create-destinations.html#lorawan-create-destination-console
+
+### Device Settings
+
+## Home Assistant
+
+### Node-RED Flow
+
+### MQTT Sensor Integration
 
 ## References
 
