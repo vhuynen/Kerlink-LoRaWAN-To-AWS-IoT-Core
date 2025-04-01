@@ -139,25 +139,72 @@ Now, if you return to the AWS IoT Core Management Console, you can verify that y
 
 The aim of this project is to progressively migrate all my LoRaWAN devices integrated from Helium to my own private LoRaWAN network. I intend to delegate the management of the LNS to AWS while forwarding messages to my on-premise Home Assistant. Therefore, before moving forward, I recommend reading this [post](https://github.com/vhuynen/Helium-Network-AWS-IoT-Core-Home-Assistant) to understand how to connect AWS IoT Core to Home Assistant over MQTT.
 
-Section in Progess...
-
 ### Profiles
 
-#### Device Profile
+Before adding a new device to AWS IoT Core, you should configure the device and service settings that will be associated with your device.
+
+#### Device Profile 
+
+- Now, navigate to : `Manage > LPWAN Devices > Devices > Profiles`
+- Click `Add device profile`
+- Select `Select default profile` and choose `EU868-A-OTAA`
+- Click `Add device profile`
 
 #### Service Profile
 
-### Destination
+- Now, navigate to : `Manage > LPWAN Devices > Devices > Profiles`
+- Click `Add service profile`
+- Fill in a `Name`
+- Check the box : `Add gateway meta data`
+- Do not activate the public network roaming if your device is fixed and you do not want to be charged for it.
+
+### Destination 
+
+- Navigate to : `Manage > LPWAN Devices > Devices > Destinations`
+- Click `Add destination`
+- Fill in a `Name`
+- Choose the choose option `Publish to AWS IoT Core message broker` 
+- Enter the topic destination : `arn:aws:iot:<region>:<account>:thing/Home_Assistant/`
+- In the section `Permissions` select `Create a new service role`
+- click `Save`
+
+> 💡 In my case, I want to forward all messages received from my Gateway to Home Assistant which listens on the same topic that the topic destination.
 
 #### IAM Role
 
-https://docs.aws.amazon.com/iot-wireless/latest/developerguide/lorawan-create-destinations.html#lorawan-create-destination-console
+If you want to use the same IAM Role for other destinations, I advice you to create own. For that, follow the [offical AWS IoT Core documentation](https://docs.aws.amazon.com/iot-wireless/latest/developerguide/lorawan-create-destinations.html#lorawan-create-destination-console).
 
 ### Device Settings
 
+Now that you have all the prerequisite settings, you can add your device :
+
+- Navigate to : `Manage > LPWAN Devices > Devices`
+- Select `Add wireless device`
+- Select `Wireless device specification` value `OTAA v1.0.x`
+- Enter the same values `DevEUI`, `AppKey` and `AppEUI` according to your device
+- Fill in a `Name`
+- Select the device and service profile and destination as defined previously
+- Finally, click `Save`
+
+> Your device is now ready to join your LoRaWAN Network. You can then reboot your device to initiate the join procedure. If everything is correct, you can verify the device traffic in the `Device traffic` tab within the details of your device.  
+
 ## Home Assistant
 
+Now that your device can send payload messages to Home Assistant, you need to configure some settings on the Home Assistant side.
+
 ### Node-RED Flow
+
+Each data frame retrieved from the Kerlink Gateway is processed by a [Node-Red flow](./source/Node-Red/lorawan-node-red-flow.json).
+
+![architecture-Lorawan-gateway_aws-iot-core](./docs/img/Node-Red-Workflow-1.0.png)
+
+1. The flow listens the Topic `arn:aws:iot:<region>:<account>:thing/Home_Assistant/`
+2. The payload is decoded from Base64 to Buffer using the specific module function [node-red-node-base64](https://flows.nodered.org/node/node-red-node-base64)
+3. A `switch` node routes the flow based on `msg.payload.WirelessDeviceId`
+4. The `msg.payload.PayloadData` is decoded by a specific JavaScript function according to the payload device.
+5. In Progress... 
+
+> 💡 For more information on how to use a LoRaWAN Decoder on Node-Red, you can refer to this [tutorial](https://support.milesight-iot.com/support/solutions/articles/73000535734-how-to-use-decoder-on-node-red)
 
 ### MQTT Sensor Integration
 
