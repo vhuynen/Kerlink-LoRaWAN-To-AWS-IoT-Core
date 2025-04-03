@@ -96,8 +96,7 @@ In the next section :
 > ℹ️ The Basic Station is a modern protocol designed for LoRaWAN gateways to ensure secure and reliable communication with network servers. It uses WebSockets for communication, which provides enhanced security and stability. The protocol supports features like remote configuration, firmware updates, and secure authentication, making it easier to manage and maintain gateways. By using Basic Station, gateways can efficiently handle data transmission and ensure that they are always up-to-date with the latest configurations and security measures.
 >
 > *System overview of LoRa Basic Station* :
-> 
-![Basic Station Architecture](https://doc.sm.tc/station/_images/station-overview.svg)
+> ![Basic Station Architecture](https://doc.sm.tc/station/_images/station-overview.svg)
 
 ## Kerlink gateway settings
 
@@ -143,7 +142,7 @@ The aim of this project is to progressively migrate all my LoRaWAN devices integ
 
 Before adding a new device to AWS IoT Core, you should configure the device and service settings that will be associated with your device.
 
-#### Device Profile 
+#### Device Profile
 
 - Now, navigate to : `Manage > LPWAN Devices > Devices > Profiles`
 - Click `Add device profile`
@@ -158,12 +157,12 @@ Before adding a new device to AWS IoT Core, you should configure the device and 
 - Check the box : `Add gateway meta data`
 - Do not activate the public network roaming if your device is fixed and you do not want to be charged for it.
 
-### Destination 
+### Destination
 
 - Navigate to : `Manage > LPWAN Devices > Devices > Destinations`
 - Click `Add destination`
 - Fill in a `Name`
-- Choose the choose option `Publish to AWS IoT Core message broker` 
+- Choose the choose option `Publish to AWS IoT Core message broker`
 - Enter the topic destination : `arn:aws:iot:<region>:<account>:thing/Home_Assistant/`
 - In the section `Permissions` select `Create a new service role`
 - click `Save`
@@ -198,15 +197,76 @@ Each data frame retrieved from the Kerlink Gateway is processed by a [Node-Red f
 
 ![architecture-Lorawan-gateway_aws-iot-core](./docs/img/Node-Red-Workflow-1.0.png)
 
-1. The flow listens the Topic `arn:aws:iot:<region>:<account>:thing/Home_Assistant/`
-2. The payload is decoded from Base64 to Buffer using the specific module function [node-red-node-base64](https://flows.nodered.org/node/node-red-node-base64)
-3. A `switch` node routes the flow based on `msg.payload.WirelessDeviceId`
+1. The flow listens the Topic `arn:aws:iot:<region>:<account>:thing/Home_Assistant/`.
+2. The payload is decoded from Base64 to Buffer using the specific module function [node-red-node-base64](https://flows.nodered.org/node/node-red-node-base64).
+3. A `switch` node routes the flow based on `msg.payload.WirelessDeviceId`.
 4. The `msg.payload.PayloadData` is decoded by a specific JavaScript function according to the payload device.
-5. In Progress... 
+5. A `switch` node routes the flow based on `msg.payload.PayloadData.type` in order to forward the message to the appropriate JavaScript tranformation function.
+6. The payload message is transformed into a simple JSON format as expected by the MQTT sensor :
+
+   ``` javascript
+    msg.payload = {
+        "temperature": {
+            "value": msg.payload.PayloadData.temperature.values[0]
+        },
+        "humidity": {
+            "value": msg.payload.PayloadData.humidity.values[0]
+        },
+        "co2": {
+            "value": msg.payload.PayloadData.co2.values[0]
+        },
+        "lowBattery": {
+            "value": msg.payload.PayloadData.status.lowBattery
+        },
+        "hardwareError": {
+            "value": msg.payload.PayloadData.status.hardwareError
+        }
+    }
+    return msg;
+   ```
+
+7. The message is then published to the topic associated with the MQTT sensor : `/adeunis/confort/co2`.
 
 > 💡 For more information on how to use a LoRaWAN Decoder on Node-Red, you can refer to this [tutorial](https://support.milesight-iot.com/support/solutions/articles/73000535734-how-to-use-decoder-on-node-red)
 
 ### MQTT Sensor Integration
+
+A [MQTT Sensor](https://www.home-assistant.io/integrations/sensor.mqtt/) is configured on Home Assistant to integrate the data from the device as entities, below for the CO2 entity :
+
+``` yaml
+mqtt:
+  sensor:
+   - name: "Adeunis Confort Co2"
+     state_topic: "/adeunis/confort/co2"
+     value_template: "{{ value_json.co2.value }}"
+     force_update: true
+     device_class: "carbon_dioxide"
+     unit_of_measurement: "ppm"
+     unique_id: "adeunis.confort_co2"
+```
+
+Now, you can integrate the CO2 entity into a gauge indicator on a dashboard :
+
+![co2-gauge-ha](./docs/img/co2-gauge-ha.png)
+
+With the following code :
+
+``` yaml
+type: gauge
+entity: sensor.adeunis_confort_co2
+needle: true
+min: 200
+max: 1500
+name: Office CO2
+segments:
+  - from: 200
+    color: "#43a047"
+  - from: 1000
+    color: "#ffa600"
+  - from: 1300
+    color: "#db4437"
+unit: ppm
+```
 
 ## References
 
